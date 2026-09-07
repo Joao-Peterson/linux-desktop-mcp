@@ -10,6 +10,22 @@ REPOSITORY_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VIRTUALENV_DIRECTORY="$REPOSITORY_DIRECTORY/.venv"
 SERVER_NAME="atspi-desktop"
 
+# --no-register builds and smoke-tests the venv without touching any Claude
+# configuration. Use it to verify a checkout without repointing an existing
+# installation at it.
+REGISTER_WITH_CLAUDE=true
+for command_line_argument in "$@"; do
+    case "$command_line_argument" in
+        --no-register) REGISTER_WITH_CLAUDE=false ;;
+        -h|--help)
+            printf 'usage: %s [--no-register]\n' "$(basename "$0")"
+            exit 0 ;;
+        *)
+            printf 'unknown option: %s\n' "$command_line_argument" >&2
+            exit 2 ;;
+    esac
+done
+
 info()  { printf '\033[1m==>\033[0m %s\n' "$*"; }
 warn()  { printf '\033[33mwarning:\033[0m %s\n' "$*" >&2; }
 fail()  { printf '\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }
@@ -56,7 +72,9 @@ if command -v gsettings >/dev/null; then
     fi
 fi
 
-pgrep -x at-spi-bus-launcher >/dev/null || warn \
+# -f, not -x: "at-spi-bus-launcher" exceeds the 15-character comm limit, so an
+# exact-name match never hits and warns about it.
+pgrep -f at-spi-bus-launcher >/dev/null || warn \
     "at-spi-bus-launcher is not running; the accessibility bus may be unavailable."
 
 # ------------------------------------------------------------------------ venv
@@ -75,7 +93,9 @@ info "Verifying the server imports"
 
 DBUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/$(id -u)/bus}"
 
-if command -v claude >/dev/null; then
+if [ "$REGISTER_WITH_CLAUDE" = false ]; then
+    info "Skipping registration (--no-register)"
+elif command -v claude >/dev/null; then
     info "Registering '$SERVER_NAME' with Claude Code"
     claude mcp remove "$SERVER_NAME" --scope user >/dev/null 2>&1 || true
     claude mcp add "$SERVER_NAME" --scope user \
@@ -87,7 +107,9 @@ else
 fi
 
 CLAUDE_DESKTOP_CONFIG="$HOME/.config/Claude/claude_desktop_config.json"
-if [ -f "$CLAUDE_DESKTOP_CONFIG" ]; then
+if [ "$REGISTER_WITH_CLAUDE" = false ]; then
+    :
+elif [ -f "$CLAUDE_DESKTOP_CONFIG" ]; then
     info "Adding '$SERVER_NAME' to Claude Desktop config"
     cp "$CLAUDE_DESKTOP_CONFIG" "$CLAUDE_DESKTOP_CONFIG.bak-$(date +%Y%m%d-%H%M%S)"
     SERVER_NAME="$SERVER_NAME" \
@@ -124,14 +146,28 @@ fi
 
 # ------------------------------------------------------------------ smoke test
 
-info "Smoke test: listing windows on the accessibility bus"
+info "Smoke test: counting what the accessibility bus can see"
+# Deliberately prints toolkits and counts rather than window titles: titles carry
+# chat partners' names, document names and page titles, and an install log tends
+# to get pasted into tickets.
 if "$VIRTUALENV_DIRECTORY/bin/python" - <<PY
-import sys
+import re, sys
 sys.path.insert(0, "$REPOSITORY_DIRECTORY")
 import server
+
 listing = server.list_windows()
-print("\n".join(listing.splitlines()[:12]))
-sys.exit(0 if "application" in listing else 1)
+toolkit_counts: dict[str, int] = {}
+for line in listing.splitlines():
+    match = re.search(r"\[toolkit=([^\]]+)\]", line)
+    if match:
+        toolkit_counts[match.group(1)] = toolkit_counts.get(match.group(1), 0) + 1
+
+window_count = len(re.findall(r"\[e\d+\]", listing))
+print(f"   {sum(toolkit_counts.values())} application(s), {window_count} window(s)")
+for toolkit_name, application_count in sorted(toolkit_counts.items()):
+    note = "  <- needs enable_chromium_accessibility.py" if toolkit_name == "Chromium" else ""
+    print(f"     {toolkit_name}: {application_count}{note}")
+sys.exit(0 if window_count else 1)
 PY
 then
     info "Installed."
