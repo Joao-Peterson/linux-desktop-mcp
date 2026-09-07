@@ -209,3 +209,16 @@ also using: focus can change between the check and the keystroke. Prefer
 
 The suite reads whatever LibreOffice Calc window is open as its table fixture
 and skips those checks if none is present.
+
+## A note on what this can see
+
+AT-SPI is a full accessibility bus: with the tools here, a window's tree includes
+message text, document contents and page titles. That is the point — it is what
+makes the server useful instead of a screenshot parser — but it means the same
+call that lists a spreadsheet's cells will read a chat window's messages. Treat
+tool output as you would the screen itself, and be deliberate about pasting it
+into logs or issues.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
