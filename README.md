@@ -1,4 +1,4 @@
-# atspi-mcp
+# linux-desktop-mcp
 
 An MCP server that exposes the Linux desktop through **AT-SPI2**, the same
 accessibility bus screen readers use. Applications publish a typed widget tree
@@ -43,7 +43,7 @@ Then, from a clone, inside your graphical session:
 ./install.sh
 ```
 
-That creates the venv, registers `atspi-desktop` with Claude Code (`--scope
+That creates the venv, registers `linux-desktop` with Claude Code (`--scope
 user`) and with Claude Desktop if its config exists, and runs a smoke test. Paths
 come from the checkout location and the D-Bus address from `id -u`, so nothing is
 machine-specific. Claude Desktop must be fully quit and reopened to load it.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""atspi-mcp — an MCP server exposing the Linux desktop through AT-SPI2.
+"""linux-desktop-mcp — an MCP server exposing the Linux desktop through AT-SPI2.
 
 Rationale
 ---------
@@ -63,7 +63,7 @@ DEFAULT_SEARCH_DEPTH = 24
 Atspi.set_timeout(ATSPI_METHOD_TIMEOUT_MILLISECONDS, ATSPI_STARTUP_TIMEOUT_MILLISECONDS)
 
 mcp_server = MCPServer(
-    name="atspi-desktop",
+    name="linux-desktop",
     version="0.1.0",
     instructions=(
         "Inspect and control Linux desktop applications through the AT-SPI2 "
@@ -877,7 +877,7 @@ def main() -> None:
         ATSPI_METHOD_TIMEOUT_MILLISECONDS, ATSPI_STARTUP_TIMEOUT_MILLISECONDS
     )
     initialisation_status: Any = Atspi.init()
-    print(f"atspi-mcp: Atspi.init() -> {initialisation_status}", file=sys.stderr)
+    print(f"linux-desktop-mcp: Atspi.init() -> {initialisation_status}", file=sys.stderr)
     mcp_server.run("stdio")
 
 

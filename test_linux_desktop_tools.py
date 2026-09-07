@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the atspi-mcp tool functions directly, bypassing MCP transport.
+"""Exercise the linux-desktop-mcp tool functions directly, bypassing MCP transport.
 
 Run against a live desktop session. Uses whatever LibreOffice Calc window
 happens to be open as the table-reading fixture, and degrades gracefully if it
@@ -9,7 +9,7 @@ is absent.
 import re
 import sys
 
-import server as atspi_mcp_server
+import server as linux_desktop_mcp_server
 
 
 def report(step_description: str, result_text: str, line_limit: int = 12) -> None:
@@ -22,7 +22,7 @@ def report(step_description: str, result_text: str, line_limit: int = 12) -> Non
 
 
 def main() -> int:
-    window_listing = atspi_mcp_server.list_windows()
+    window_listing = linux_desktop_mcp_server.list_windows()
     report("list_windows()", window_listing, line_limit=16)
 
     # Pick the LibreOffice window ref out of the listing, if present.
@@ -40,12 +40,12 @@ def main() -> int:
 
     print(f"\nUsing LibreOffice window ref: {libreoffice_window_ref}")
 
-    tree_dump = atspi_mcp_server.describe_ui(
+    tree_dump = linux_desktop_mcp_server.describe_ui(
         libreoffice_window_ref, maximum_depth=3, maximum_nodes=25
     )
     report("describe_ui(depth=3, nodes=25)", tree_dump, line_limit=14)
 
-    table_matches = atspi_mcp_server.find_elements(
+    table_matches = linux_desktop_mcp_server.find_elements(
         libreoffice_window_ref, "table", match_role_instead_of_name=True, result_limit=3
     )
     report("find_elements(role~'table')", table_matches)
@@ -56,16 +56,16 @@ def main() -> int:
         return 0
 
     table_ref = table_reference_match.group(1)
-    cell_block = atspi_mcp_server.read_table_region(
+    cell_block = linux_desktop_mcp_server.read_table_region(
         table_ref, first_row=0, first_column=0, row_count=7, column_count=3
     )
     report(f"read_table_region({table_ref})", cell_block, line_limit=12)
 
     # Error paths should be readable rather than tracebacks.
     for bad_call_description, bad_call in [
-        ("unknown ref", lambda: atspi_mcp_server.get_element_text("e99999")),
-        ("non-table read", lambda: atspi_mcp_server.read_table_region(libreoffice_window_ref)),
-        ("unwritable set", lambda: atspi_mcp_server.set_element_value(
+        ("unknown ref", lambda: linux_desktop_mcp_server.get_element_text("e99999")),
+        ("non-table read", lambda: linux_desktop_mcp_server.read_table_region(libreoffice_window_ref)),
+        ("unwritable set", lambda: linux_desktop_mcp_server.set_element_value(
             libreoffice_window_ref, "nope")),
     ]:
         try:

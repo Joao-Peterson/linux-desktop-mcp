@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install atspi-mcp: create the venv, register the MCP server, run a smoke test.
+# Install linux-desktop-mcp: create the venv, register the MCP server, run a smoke test.
 #
 # Nothing here is machine-specific -- paths come from the checkout location and
 # the D-Bus address from the current user's id, so a clone-and-run works as-is.
@@ -8,7 +8,7 @@ set -euo pipefail
 
 REPOSITORY_DIRECTORY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VIRTUALENV_DIRECTORY="$REPOSITORY_DIRECTORY/.venv"
-SERVER_NAME="atspi-desktop"
+SERVER_NAME="linux-desktop"
 
 # --no-register builds and smoke-tests the venv without touching any Claude
 # configuration. Use it to verify a checkout without repointing an existing
